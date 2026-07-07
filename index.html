@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYSTEM UPDATE - Maintenance Mode</title>
+    <!-- Tailwind CSS for modern responsive architecture -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Retro Pixel Font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+          theme: {
+            extend: {
+              fontFamily: {
+                mono: ['VT323', 'monospace'],
+              },
+            }
+          }
+        }
+    </script>
+    <style>
+        /* Custom retro styles and phosphor glows */
+        :root {
+            --phosphor-color: #ffb000; /* Default Amber */
+            --phosphor-glow: rgba(255, 176, 0, 0.6);
+            --phosphor-glow-soft: rgba(255, 176, 0, 0.25);
+            --screen-bg: #120a00;
+        }
+
+        body {
+            background-color: #0c0804;
+            background-image: radial-gradient(rgba(255, 176, 0, 0.04) 1px, transparent 0),
+                              linear-gradient(to right, rgba(255,176,0,0.01) 1px, transparent 0);
+            background-size: 20px 20px;
+        }
+
+        /* Scanlines Overlay */
+        .scanlines {
+            position: relative;
+            overflow: hidden;
+        }
+        .scanlines::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(
+                rgba(18, 16, 16, 0) 50%, 
+                rgba(0, 0, 0, 0.35) 50%
+            ), linear-gradient(
+                90deg, 
+                rgba(255, 0, 0, 0.05), 
+                rgba(0, 255, 0, 0.02), 
+                rgba(0, 0, 255, 0.05)
+            );
+            z-index: 20;
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none;
+        }
+
+        /* Subtle CRT flicker animation */
+        @keyframes crt-flicker {
+            0% { opacity: 0.985; }
+            50% { opacity: 0.998; }
+            100% { opacity: 0.985; }
+        }
+        .crt-flicker {
+            animation: crt-flicker 0.15s infinite;
+        }
+
+        /* Degauss screen warp animation */
+        @keyframes degauss {
+            0% {
+                transform: scale(1) skewX(0deg);
+                filter: brightness(1) contrast(1) blur(0px);
+            }
+            10% {
+                transform: scale(1.2, 0.05) skewX(25deg);
+                filter: brightness(5) contrast(3) blur(2px);
+            }
+            30% {
+                transform: scale(0.01, 1.5) skewX(-15deg);
+                filter: brightness(4) blur(4px);
+            }
+            60% {
+                transform: scale(1.05, 0.95) skewX(5deg);
+                filter: brightness(0.8) blur(1px);
+            }
+            100% {
+                transform: scale(1) skewX(0deg);
+                filter: brightness(1) contrast(1) blur(0px);
+            }
+        }
+        .degaussing {
+            animation: degauss 0.8s cubic-bezier(0.15, 0.85, 0.45, 1) forwards;
+        }
+
+        /* Glowing text & box styles */
+        .glow-text {
+            color: var(--phosphor-color);
+            text-shadow: 0 0 4px var(--phosphor-glow), 0 0 10px var(--phosphor-glow-soft);
+        }
+        .glow-border {
+            border-color: var(--phosphor-color);
+            box-shadow: 0 0 10px var(--phosphor-glow-soft), inset 0 0 10px var(--phosphor-glow-soft);
+        }
+        .glow-bg {
+            background-color: var(--phosphor-color);
+            box-shadow: 0 0 8px var(--phosphor-glow);
+        }
+
+        /* Vintage terminal cursor blink */
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+        .cursor-blink {
+            animation: blink 0.9s infinite steps(1);
+        }
+
+        /* Scrollbar styling for CRT Screen log */
+        .terminal-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+        .terminal-scroll::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+        }
+        .terminal-scroll::-webkit-scrollbar-thumb {
+            background: var(--phosphor-color);
+            border-radius: 4px;
+        }
+
+        /* Retro button tactile style */
+        .retro-switch-btn {
+            box-shadow: 2px 2px 0px #000;
+            transition: all 0.1s ease;
+        }
+        .retro-switch-btn:active {
+            transform: translate(1px, 1px);
+            box-shadow: 1px 1px 0px #000;
+        }
+    </style>
+</head>
+<body class="font-mono min-h-screen text-stone-200 p-4 md:p-8 flex items-center justify-center select-none overflow-x-hidden">
+
+    <div class="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        
+        <!-- Left Column: System Status Information & Branding -->
+        <div class="lg:col-span-5 flex flex-col justify-center space-y-6">
+            
+            <div class="space-y-2">
+                <div class="text-xs bg-yellow-600/10 text-yellow-500 border border-yellow-500/30 px-3 py-1.5 rounded inline-flex items-center gap-2 w-max animate-pulse">
+                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
+                    <span>SYSTEM OFFLINE FOR PLANNED MAINTENANCE</span>
+                </div>
+                <h1 class="text-5xl md:text-6xl font-bold tracking-tight text-white">
+                    PROJECT <span class="text-amber-500" id="brand-accent">KRONOS</span>
+                </h1>
+                <p class="text-stone-400 text-lg">
+                    We are performing structural database refactoring and upgrading our core mainframe processors. We will return online shortly.
+                </p>
+            </div>
+
+            <!-- ASCII Art Banner with retro construction indicator -->
+            <div class="bg-black/40 border border-stone-800 p-4 rounded-lg overflow-x-auto text-xs text-stone-400 leading-tight">
+<pre class="text-amber-500/80">
+    _____________________   _____________________
+   /                    /  /                    /
+  /   MAINTENANCE IN   /  /     PROGRESS       /
+ /____________________/  /____________________/
+ \                    \  \                    \
+  \     [ 0x8F9A ]     \  \    BE PATIENT!     \
+   \____________________\  \____________________\
+</pre>
+            </div>
+
+            <!-- Estimated Time Countdown -->
+            <div class="bg-stone-900/60 border border-stone-800 rounded-lg p-5">
+                <div class="text-stone-400 text-sm mb-2 uppercase tracking-widest">Estimated Completion Target</div>
+                <div class="grid grid-cols-4 gap-2 text-center">
+                    <div class="bg-black/50 p-2 rounded border border-stone-800">
+                        <div id="days" class="text-2xl md:text-3xl font-bold text-white">00</div>
+                        <div class="text-[10px] text-stone-500 uppercase">Days</div>
+                    </div>
+                    <div class="bg-black/50 p-2 rounded border border-stone-800">
+                        <div id="hours" class="text-2xl md:text-3xl font-bold text-white">02</div>
+                        <div class="text-[10px] text-stone-500 uppercase">Hours</div>
+                    </div>
+                    <div class="bg-black/50 p-2 rounded border border-stone-800">
+                        <div id="minutes" class="text-2xl md:text-3xl font-bold text-white">45</div>
+                        <div class="text-[10px] text-stone-500 uppercase">Mins</div>
+                    </div>
+                    <div class="bg-black/50 p-2 rounded border border-stone-800">
+                        <div id="seconds" class="text-2xl md:text-3xl font-bold text-white">12</div>
+                        <div class="text-[10px] text-stone-500 uppercase">Secs</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Classic Vintage Sign up form -->
+            <div class="space-y-3">
+                <label for="subscriber-email" class="text-sm font-semibold text-stone-400 uppercase tracking-widest block">
+                    Get alerted upon system restart:
+                </label>
+                <div class="flex gap-2">
+                    <input type="email" id="subscriber-email" placeholder="ENTER MAIL ADDRESS" 
+                           class="flex-1 bg-black border border-stone-700 rounded px-4 py-2.5 text-stone-200 font-mono text-base focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-stone-600 transition-all">
+                    <button onclick="handleSubscribeClick()" class="bg-amber-600 hover:bg-amber-500 active:scale-95 text-black font-extrabold px-6 rounded transition-all flex items-center gap-1">
+                        <span>CONNECT</span>
+                    </button>
+                </div>
+                <div id="subscribe-status" class="text-sm h-5 text-amber-500/80"></div>
+            </div>
+
+            <!-- Simple social terminal shortcuts -->
+            <div class="flex items-center gap-4 text-xs text-stone-500 uppercase">
+                <span>[ <a href="#status" onclick="runCommand('status')" class="hover:text-stone-300">SYSTEM.LOG</a> ]</span>
+                <span>[ <a href="#ping" onclick="runCommand('ping')" class="hover:text-stone-300">PING_TEST</a> ]</span>
+                <span>[ <a href="#support" onclick="alertSystem('Connect to operations support: ops@retro-kronos.net')" class="hover:text-stone-300">SUPPORT_DESK</a> ]</span>
+            </div>
+
+        </div>
+
+        <!-- Right Column: Interactive CRT Computer Monitor Chassis -->
+        <div class="lg:col-span-7 flex flex-col items-center">
+            
+            <!-- Monitor Outer Beige Bezel (Classic PC Style) -->
+            <div class="bg-stone-300 rounded-3xl p-6 md:p-8 shadow-2xl border-stone-400 border-4 w-full max-w-xl flex flex-col relative">
+                <!-- Bezel Brand Label -->
+                <div class="absolute top-2.5 left-1/2 -translate-x-1/2 text-[10px] tracking-widest text-stone-500 font-sans font-bold select-none">
+                    ★ KRONOS-TRON MULTI-SYNC CRT-500 ★
+                </div>
+
+                <!-- Screen Glass Bezel Inner -->
+                <div class="bg-stone-900 p-2 md:p-3 rounded-xl border-4 border-stone-400/80 shadow-inner flex flex-col flex-1">
+                    
+                    <!-- The CRT Glowing Phosphor Screen -->
+                    <div id="crt-screen" class="crt-flicker scanlines rounded-lg flex flex-col justify-between p-4 min-h-[380px] md:min-h-[420px] transition-colors duration-300" style="background-color: var(--screen-bg);">
+                        
+                        <!-- Screen Header -->
+                        <div class="flex justify-between items-center text-xs border-b pb-2 mb-3 glow-text" style="border-color: var(--phosphor-color);">
+                            <span>CORE TERMINAL V2.5-MAINT</span>
+                            <div class="flex items-center gap-2">
+                                <span class="inline-block w-2.5 h-2.5 bg-red-600 rounded-full animate-ping"></span>
+                                <span class="font-bold">LIVE OVERRIDE</span>
+                            </div>
+                        </div>
+
+                        <!-- Main Screen Content Area -->
+                        <div class="flex-1 flex flex-col justify-between text-base leading-snug overflow-hidden">
+                            
+                            <!-- Mode 1: The Command Console Screen -->
+                            <div id="terminal-content" class="flex-1 flex flex-col justify-between h-full">
+                                <div id="terminal-log" class="overflow-y-auto terminal-scroll max-h-[280px] pr-2 space-y-2 flex-1 glow-text">
+                                    <div>[SYS_INIT] Booting core node KRONOS_01...</div>
+                                    <div>[SYS_INIT] Loading amber core protocols... [OK]</div>
+                                    <div>[SYS_INIT] Status Code: MAINTENANCE_DESK_REBUILD</div>
+                                    <div>[SYS_INIT] Storage unit status: NOMINAL</div>
+                                    <div>---</div>
+                                    <div>Welcome Guest! The system is undergoing upgrades.</div>
+                                    <div>Type <span class="underline font-bold">help</span> to view active terminal capabilities.</div>
+                                </div>
+                                
+                                <!-- Input Prompt (Fixed at bottom of terminal) -->
+                                <div class="mt-4 flex items-center gap-2 border-t pt-2.5 glow-text" style="border-color: var(--phosphor-color);">
+                                    <span class="font-bold flex items-center gap-1 select-none">guest@kronos:~$</span>
+                                    <input type="text" id="terminal-input" autocomplete="off" autofocus
+                                           class="flex-1 bg-transparent border-none outline-none text-base glow-text w-full caret-transparent" 
+                                           onkeydown="handleTerminalInput(event)">
+                                    <span class="cursor-blink font-bold select-none" id="fake-cursor">█</span>
+                                </div>
+                            </div>
+
+                            <!-- Mode 2: Interactive Snake Game Frame (Hidden by Default) -->
+                            <div id="game-frame" class="hidden flex-1 flex-col items-center justify-center">
+                                <div class="flex justify-between w-full text-xs mb-1 glow-text">
+                                    <span>GAME: MONOCHROME-SNAKE</span>
+                                    <span>SCORE: <span id="snake-score">00</span></span>
+                                </div>
+                                <canvas id="gameCanvas" width="360" height="240" class="border glow-border bg-black/90 w-full max-h-[210px] rounded"></canvas>
+                                <div class="text-[11px] glow-text text-center mt-1 animate-pulse">
+                                    USE [WASD/ARROWS] OR ONSCREEN D-PAD TO NAVIGATE
+                                </div>
+                            </div>
+
+                            <!-- Mode 3: Custom Alert Dialog (Simulated Overlay Dialog within screen) -->
+                            <div id="terminal-alert" class="hidden flex-1 flex-col items-center justify-center text-center p-4">
+                                <div class="border-2 glow-border p-4 rounded bg-black/80 max-w-xs">
+                                    <div class="font-bold text-lg glow-text mb-2">[!!!] RETRO SYSTEM ALERT [!!!]</div>
+                                    <div id="alert-message" class="glow-text text-sm mb-4">No message.</div>
+                                    <button onclick="dismissSystemAlert()" class="glow-bg px-4 py-1 text-black font-extrabold text-sm hover:opacity-90 active:scale-95 transition-all">
+                                        DISMISS
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Progress Bar / Status footer inside screen -->
+                        <div class="mt-3 pt-2 border-t text-[11px] flex justify-between glow-text" style="border-color: var(--phosphor-color);">
+                            <span id="load-label">REBUILD STATE: IN_PROGRESS</span>
+                            <span id="load-bar">[████████░░░░] 66%</span>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Mobile Touch Gamepad Controller (only renders/activates in Snake Game Mode) -->
+                <div id="mobile-gamepad" class="hidden grid grid-cols-3 gap-1.5 max-w-[160px] mx-auto mt-4 transition-all">
+                    <div></div>
+                    <button onclick="changeSnakeDirection('UP')" class="bg-stone-400 hover:bg-stone-500 text-stone-800 p-2 text-center font-bold rounded retro-switch-btn border-b-2 border-stone-600">▲</button>
+                    <div></div>
+                    <button onclick="changeSnakeDirection('LEFT')" class="bg-stone-400 hover:bg-stone-500 text-stone-800 p-2 text-center font-bold rounded retro-switch-btn border-b-2 border-stone-600">◀</button>
+                    <div class="bg-stone-300 flex items-center justify-center text-stone-600 text-[10px]">PAD</div>
+                    <button onclick="changeSnakeDirection('RIGHT')" class="bg-stone-400 hover:bg-stone-500 text-stone-800 p-2 text-center font-bold rounded retro-switch-btn border-b-2 border-stone-600">▶</button>
+                    <div></div>
+                    <button onclick="changeSnakeDirection('DOWN')" class="bg-stone-400 hover:bg-stone-500 text-stone-800 p-2 text-center font-bold rounded retro-switch-btn border-b-2 border-stone-600">▼</button>
+                </div>
+
+                <!-- Interactive Hardware Dial Knobs and Switchboard Panels -->
+                <div class="mt-6 flex flex-wrap justify-between items-center bg-stone-400 p-3 rounded-xl shadow-inner border border-stone-500/50 gap-4 text-stone-800">
+                    
+                    <!-- Monitor Theme Color Dial -->
+                    <div class="flex items-center gap-2">
+                        <label class="text-[11px] font-bold uppercase tracking-wider text-stone-600">Color</label>
+                        <select onchange="changeColorTheme(this.value)" class="bg-stone-500 border border-stone-600 text-white font-bold text-xs p-1 rounded font-mono focus:outline-none shadow-sm cursor-pointer">
+                            <option value="amber">AMBER</option>
+                            <option value="green">GREEN</option>
+                            <option value="cyber">CYAN</option>
+                        </select>
+                    </div>
+
+                    <!-- Tactile Control Buttons -->
+                    <div class="flex items-center gap-2.5">
+                        <button onclick="triggerDegauss()" title="Simulate Magnetic Degaussing Effect" class="bg-zinc-700 active:bg-zinc-800 text-white text-[11px] font-extrabold px-3 py-1 rounded retro-switch-btn border-b-2 border-zinc-900 hover:brightness-110">
+                            DEGAUSS
+                        </button>
+                        
+                        <button onclick="toggleSound()" id="sound-toggle-btn" class="bg-zinc-700 text-white text-[11px] font-extrabold px-3 py-1 rounded retro-switch-btn border-b-2 border-zinc-900 flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M5 17h-5v-10h5v10zm2-10v10l9 5v-20l-9 5zm11.025 5c0-2.313-1.018-4.381-2.625-5.787l.711-.707c1.831 1.603 2.914 3.971 2.914 6.494 0 2.522-1.083 4.891-2.914 6.494l-.711-.707c1.607-1.406 2.625-3.474 2.625-5.787z"/></svg>
+                            <span id="sound-status-text">SOUND MUTE</span>
+                        </button>
+                    </div>
+
+                    <!-- Bezel Power Panel -->
+                    <div class="flex items-center gap-2">
+                        <div class="flex flex-col items-end">
+                            <span class="text-[9px] text-stone-600 font-sans leading-none font-bold">MONITOR</span>
+                            <span class="text-[10px] text-stone-700 leading-none font-bold">POWER</span>
+                        </div>
+                        <div class="relative">
+                            <input type="checkbox" id="power-toggle" checked onchange="toggleMonitorPower(this.checked)" class="sr-only peer">
+                            <div class="w-9 h-5 bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-stone-400 after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-600 cursor-pointer"></div>
+                        </div>
+                        <!-- LED Power Light -->
+                        <span id="power-led" class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)] transition-all duration-300"></span>
+                    </div>
+
+                </div>
+
+                <!-- Clickable Mainframe Command Panel below chassis for mobile convenience -->
+                <div class="mt-4">
+                    <div class="text-[11px] text-stone-600 font-bold mb-1.5 uppercase text-center tracking-wider">Quick Mainframe Directives</div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <button onclick="runCommand('status')" class="bg-stone-400 text-stone-800 py-1 px-2 rounded text-xs font-bold retro-switch-btn border-b border-stone-600 hover:bg-stone-500">
+                            > SYSTEM LOG
+                        </button>
+                        <button onclick="runCommand('ping')" class="bg-stone-400 text-stone-800 py-1 px-2 rounded text-xs font-bold retro-switch-btn border-b border-stone-600 hover:bg-stone-500">
+                            > PING TEST
+                        </button>
+                        <button onclick="runCommand('play')" class="bg-stone-400 text-stone-800 py-1 px-2 rounded text-xs font-bold retro-switch-btn border-b border-stone-600 hover:bg-stone-500">
+                            > SNAKE GAME
+                        </button>
+                        <button onclick="runCommand('matrix')" class="bg-stone-400 text-stone-800 py-1 px-2 rounded text-xs font-bold retro-switch-btn border-b border-stone-600 hover:bg-stone-500">
+                            > MATRIX CODE
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        /* -------------------------------------------------------------
+           Global Variables & System Configurations
+        ------------------------------------------------------------- */
+        let audioCtx = null;
+        let isMuted = true;
+        let powerOn = true;
+        
+        // Terminal element references
+        const terminalLog = document.getElementById('terminal-log');
+        const terminalInput = document.getElementById('terminal-input');
+        const fakeCursor = document.getElementById('fake-cursor');
+        const crtScreen = document.getElementById('crt-screen');
+        const loadBar = document.getElementById('load-bar');
+        const loadLabel = document.getElementById('load-label');
+        const powerLed = document.getElementById('power-led');
+
+        // Commands list
+        const commands = {
+            help: "Display user options: [ status, ping, play, matrix, subscribe, clear, degauss, beep ]",
+            status: "Retrieve network mainframe telemetry state.",
+            ping: "Measure round-trip delay to host node KRONOS-01.",
+            play: "Boot retro monochrome snake directly inside screen.",
+            matrix: "Trigger full screen cybernetic ambient light stream.",
+            subscribe: "Receive live telemetry reports via mail packet. Usage: subscribe [your-email]",
+            clear: "Clear visual buffer registers.",
+            degauss: "Physically discharge magnetic screen surface.",
+            beep: "Trigger basic electronic diagnostic chime."
+        };
+
+        /* -------------------------------------------------------------
+           Web Audio Sound Synthesizer (No External Assets)
+        ------------------------------------------------------------- */
+        function initAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSound(type, pitch = 440, length = 0.08, volume = 0.1) {
+            if (isMuted || !powerOn) return;
+            try {
+                initAudioContext();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = type; // 'sine', 'square', 'triangle', 'sawtooth'
+                osc.frequency.setValueAtTime(pitch, audioCtx.currentTime);
+                
+                gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + length);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + length);
+            } catch(e) {
+                console.warn("Synthesizer failed to generate tone:", e);
+            }
+        }
+
+        // Custom sweeping hum for CRT Degauss simulation
+        function playDegaussBuzz() {
+            if (isMuted || !powerOn) return;
+            try {
+                initAudioContext();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+                // Sweep frequency downward rapidly
+                osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.7);
+                
+                gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.8);
+            } catch(e){}
+        }
+
+        function toggleSound() {
+            isMuted = !isMuted;
+            const statusTxt = document.getElementById('sound-status-text');
+            const toggleBtn = document.getElementById('sound-toggle-btn');
+            
+            if (isMuted) {
+                statusTxt.innerText = "SOUND MUTE";
+                toggleBtn.classList.remove('bg-green-700');
+                toggleBtn.classList.add('bg-zinc-700');
+            } else {
+                initAudioContext();
+                statusTxt.innerText = "SOUND ACTIVE";
+                toggleBtn.classList.remove('bg-zinc-700');
+                toggleBtn.classList.add('bg-green-700');
+                playSound('sine', 880, 0.1, 0.15);
+            }
+        }
+
+        /* -------------------------------------------------------------
+           CRT Aesthetic / Themes / Hardware Controls
+        ------------------------------------------------------------- */
+        function changeColorTheme(theme) {
+            playSound('sine', 600, 0.05);
+            const root = document.documentElement;
+            if (theme === 'green') {
+                root.style.setProperty('--phosphor-color', '#39ff14');
+                root.style.setProperty('--phosphor-glow', 'rgba(57, 255, 20, 0.6)');
+                root.style.setProperty('--phosphor-glow-soft', 'rgba(57, 255, 20, 0.25)');
+                root.style.setProperty('--screen-bg', '#021400');
+                document.getElementById('brand-accent').className = "text-green-500";
+            } else if (theme === 'cyber') {
+                root.style.setProperty('--phosphor-color', '#00f0ff');
+                root.style.setProperty('--phosphor-glow', 'rgba(0, 240, 255, 0.6)');
+                root.style.setProperty('--phosphor-glow-soft', 'rgba(0, 240, 255, 0.25)');
+                root.style.setProperty('--screen-bg', '#001014');
+                document.getElementById('brand-accent').className = "text-cyan-500";
+            } else { // Amber Default
+                root.style.setProperty('--phosphor-color', '#ffb000');
+                root.style.setProperty('--phosphor-glow', 'rgba(255, 176, 0, 0.6)');
+                root.style.setProperty('--phosphor-glow-soft', 'rgba(255, 176, 0, 0.25)');
+                root.style.setProperty('--screen-bg', '#120a00');
+                document.getElementById('brand-accent').className = "text-amber-500";
+            }
+        }
+
+        function triggerDegauss() {
+            if (!powerOn) return;
+            playDegaussBuzz();
+            crtScreen.classList.remove('degaussing');
+            void crtScreen.offsetWidth; // Force CSS reflow to replay animation
+            crtScreen.classList.add('degaussing');
+            
+            // Log degauss process inside terminal
+            if (activeMode === 'terminal') {
+                logOutput("<br>*** DEGAUSS DISCHARGE ACTION TRIGGERED ***");
+                logOutput("RECALIBRATING GEOMAGNETIC SHIELD INTEGRITY... SUCCESS<br>");
+            }
+        }
+
+        function toggleMonitorPower(state) {
+            powerOn = state;
+            if (powerOn) {
+                crtScreen.style.filter = "brightness(1) contrast(1) scale(1)";
+                crtScreen.style.opacity = "1";
+                powerLed.className = "w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]";
+                playSound('sine', 1200, 0.15, 0.1);
+            } else {
+                crtScreen.style.filter = "brightness(0) contrast(0) scale(0.95)";
+                crtScreen.style.opacity = "0.05";
+                powerLed.className = "w-2 h-2 rounded-full bg-zinc-600";
+            }
+        }
+
+        /* -------------------------------------------------------------
+           Live Countdown & Progress Bar Updator
+        ------------------------------------------------------------- */
+        // Dynamic simulated construction tasks
+        const statusTasks = [
+            { label: "DEFRAGMENTING SECTORS", bar: "[██████████░░] 83%" },
+            { label: "SYNCHRONIZING DB SHARDS", bar: "[████████████] 100%" },
+            { label: "RECONSTRUCTING CORES", bar: "[████░░░░░░░░] 33%" },
+            { label: "MIGRATING COGNITIVE NODES", bar: "[████████████] 100%" },
+            { label: "COMPILING BINARY PACKS", bar: "[████████░░░░] 66%" },
+            { label: "BREWING MAIN CORE COFFEE", bar: "[███████████░] 91%" }
+        ];
+        let currentTaskIdx = 0;
+
+        function updateProgressIndicator() {
+            currentTaskIdx = (currentTaskIdx + 1) % statusTasks.length;
+            loadLabel.innerText = "SYS_REBUILD: " + statusTasks[currentTaskIdx].label;
+            loadBar.innerText = statusTasks[currentTaskIdx].bar;
+        }
+        setInterval(updateProgressIndicator, 4500);
+
+        // Countdown Calculations
+        let countdownTime = 2 * 3600 + 45 * 60 + 12; // 2h 45m 12s initial target
+        function updateCountdown() {
+            if (countdownTime > 0) {
+                countdownTime--;
+            }
+            const d = Math.floor(countdownTime / 86400);
+            const h = Math.floor((countdownTime % 86400) / 3600);
+            const m = Math.floor((countdownTime % 3600) / 60);
+            const s = countdownTime % 60;
+
+            document.getElementById('days').innerText = String(d).padStart(2, '0');
+            document.getElementById('hours').innerText = String(h).padStart(2, '0');
+            document.getElementById('minutes').innerText = String(m).padStart(2, '0');
+            document.getElementById('seconds').innerText = String(s).padStart(2, '0');
+        }
+        setInterval(updateCountdown, 1000);
+
+        /* -------------------------------------------------------------
+           Terminal Logic & Command Processing
+        ------------------------------------------------------------- */
+        let activeMode = 'terminal'; // modes: terminal, game, alert
+
+        // Autofocus terminal typing setup
+        document.getElementById('crt-screen').addEventListener('click', () => {
+            if (powerOn && activeMode === 'terminal') {
+                terminalInput.focus();
+            }
+        });
+
+        // Sync visual fake cursor block with invisible input
+        terminalInput.addEventListener('input', () => {
+            playSound('triangle', 900, 0.02, 0.03); // Retro keyclick sound
+        });
+
+        function handleTerminalInput(event) {
+            if (event.key === 'Enter') {
+                const query = terminalInput.value.trim();
+                terminalInput.value = '';
+                if (query.length > 0) {
+                    processCommand(query);
+                }
+            }
+        }
+
+        function logOutput(htmlContent) {
+            const row = document.createElement('div');
+            row.innerHTML = htmlContent;
+            terminalLog.appendChild(row);
+            terminalLog.scrollTop = terminalLog.scrollHeight;
+        }
+
+        function processCommand(rawInput) {
+            const parts = rawInput.toLowerCase().split(' ');
+            const command = parts[0];
+            const arg = parts.slice(1).join(' ');
+
+            // Print Echo Prompt
+            logOutput(`guest@kronos:~$ ${rawInput}`);
+            playSound('sine', 400, 0.05);
+
+            switch (command) {
+                case 'help':
+                    logOutput("<div class='font-bold mt-1'>Available Directives:</div>");
+                    for (const [cmd, desc] of Object.entries(commands)) {
+                        logOutput(`<span class='underline'>${cmd}</span> - ${desc}`);
+                    }
+                    logOutput(" ");
+                    break;
+                case 'status':
+                    logOutput("<br>--- KRONOS TELEMETRY REPORT ---");
+                    logOutput("Host Unit ID: KR-NODE-01");
+                    logOutput("Operating Status: [ MAINTENANCE DEPLOYMENT ]");
+                    logOutput("Core Relational DB Shards: OFFLINE (REBUILDING STACK)");
+                    logOutput("Estimated Maintenance Delta: " + document.getElementById('hours').innerText + "h " + document.getElementById('minutes').innerText + "m remaining.");
+                    logOutput("Operations Staff: 3 units connected remotely.<br>");
+                    break;
+                case 'ping':
+                    logOutput("Pinging node KRONOS-01 [10.240.8.19] with 32 bytes of buffer data:");
+                    setTimeout(() => {
+                        logOutput("Reply from 10.240.8.19: bytes=32 time=42ms TTL=64");
+                        playSound('sine', 1000, 0.05);
+                    }, 200);
+                    setTimeout(() => {
+                        logOutput("Reply from 10.240.8.19: bytes=32 time=39ms TTL=64");
+                        playSound('sine', 1000, 0.05);
+                    }, 400);
+                    setTimeout(() => {
+                        logOutput("Ping statistics for host: Packet loss = 0% (RTT average = 40.5ms)<br>");
+                    }, 600);
+                    break;
+                case 'play':
+                    startSnakeGame();
+                    break;
+                case 'matrix':
+                    runMatrixRainEffect();
+                    break;
+                case 'subscribe':
+                    if (arg) {
+                        mockSubscribe(arg);
+                    } else {
+                        logOutput("Error: Subscriber payload missing. Usage: subscribe [your-email]<br>");
+                    }
+                    break;
+                case 'clear':
+                    terminalLog.innerHTML = '';
+                    break;
+                case 'degauss':
+                    triggerDegauss();
+                    break;
+                case 'beep':
+                    playSound('square', 880, 0.25, 0.15);
+                    logOutput("Beep diagnostic completed successfully.<br>");
+                    break;
+                default:
+                    logOutput(`Command not recognized: '${command}'. Type <span class='underline'>help</span> for directives.<br>`);
+                    playSound('square', 180, 0.15, 0.1);
+            }
+        }
+
+        // Direct command activation via buttons
+        function runCommand(cmdString) {
+            if (!powerOn) return;
+            
+            // If in game, close game cleanly
+            if (activeMode === 'game') {
+                endSnakeGame(false);
+            }
+            
+            activeMode = 'terminal';
+            document.getElementById('game-frame').classList.add('hidden');
+            document.getElementById('mobile-gamepad').classList.add('hidden');
+            document.getElementById('terminal-content').classList.remove('hidden');
+            
+            processCommand(cmdString);
+        }
+
+        // Alert Modals inside the screen (replaces browser alerts)
+        function alertSystem(msg) {
+            if (!powerOn) return;
+            playSound('square', 660, 0.1, 0.1);
+            setTimeout(() => playSound('square', 660, 0.1, 0.1), 120);
+            
+            document.getElementById('alert-message').innerText = msg;
+            
+            // Hide normal panels
+            document.getElementById('terminal-content').classList.add('hidden');
+            document.getElementById('game-frame').classList.add('hidden');
+            document.getElementById('mobile-gamepad').classList.add('hidden');
+            
+            // Show Alert screen
+            document.getElementById('terminal-alert').classList.remove('hidden');
+            activeMode = 'alert';
+        }
+
+        function dismissSystemAlert() {
+            playSound('sine', 800, 0.05);
+            document.getElementById('terminal-alert').classList.add('hidden');
+            document.getElementById('terminal-content').classList.remove('hidden');
+            activeMode = 'terminal';
+            setTimeout(() => terminalInput.focus(), 100);
+        }
+
+        // Mock subscription handling from left-column input
+        function handleSubscribeClick() {
+            const emailInput = document.getElementById('subscriber-email');
+            const statusDiv = document.getElementById('subscribe-status');
+            const val = emailInput.value.trim();
+
+            if (val.length === 0 || !val.includes('@')) {
+                playSound('square', 200, 0.1);
+                statusDiv.innerText = "CRITICAL ERROR: INVALID PACKET VALUE";
+                statusDiv.className = "text-sm h-5 text-red-500 animate-pulse";
+                return;
+            }
+
+            playSound('sine', 1000, 0.15);
+            statusDiv.innerText = "SUCCESS: CONNECTION REGISTERED";
+            statusDiv.className = "text-sm h-5 text-green-500";
+            emailInput.value = '';
+
+            if (powerOn && activeMode === 'terminal') {
+                runCommand(`subscribe ${val}`);
+            }
+        }
+
+        function mockSubscribe(email) {
+            logOutput(`Initiating subscribe handshake for: ${email}...`);
+            setTimeout(() => {
+                logOutput("Secure authentication verified.");
+                logOutput(`System mailbox packet linked successfully. Welcome aboard!<br>`);
+                playSound('sine', 880, 0.1);
+            }, 800);
+        }
+
+        /* -------------------------------------------------------------
+           Amber Digital Matrix Code Rain Simulation Mode
+        ------------------------------------------------------------- */
+        function runMatrixRainEffect() {
+            logOutput("Initializing full screen cybernetic code storm. Press 'clear' to exit.");
+            setTimeout(() => {
+                terminalLog.innerHTML = '';
+                logOutput("--- MONOCHROME DECRYPT SCAN ACTIVE ---");
+                logOutput("Type 'clear' and press enter to resume terminal commands.");
+                
+                let intervals = [];
+                for(let i=0; i<8; i++) {
+                    const rowInterval = setInterval(() => {
+                        if (activeMode !== 'terminal') {
+                            clearInterval(rowInterval);
+                            return;
+                        }
+                        let binaryString = "";
+                        for(let j=0; j<35; j++) {
+                            binaryString += Math.random() > 0.5 ? "1" : "0";
+                        }
+                        logOutput(`<span class="opacity-60 text-xs">${binaryString}</span>`);
+                    }, 200 + Math.random()*300);
+                    intervals.push(rowInterval);
+                }
+            }, 1000);
+        }
+
+        /* -------------------------------------------------------------
+           Fully Interactive Retro Snake Game inside CRT Screen
+        ------------------------------------------------------------- */
+        let canvas = document.getElementById('gameCanvas');
+        let ctx = canvas.getContext('2d');
+        let gameLoopInterval = null;
+        let snake = [];
+        let food = {};
+        let score = 0;
+        let gridUnit = 12;
+        let snakeDirection = 'RIGHT';
+        let isGameRunning = false;
+
+        function startSnakeGame() {
+            activeMode = 'game';
+            isGameRunning = true;
+            score = 0;
+            snakeDirection = 'RIGHT';
+            document.getElementById('snake-score').innerText = '00';
+            
+            // Setup Snake initial positions
+            snake = [
+                {x: 6 * gridUnit, y: 10 * gridUnit},
+                {x: 5 * gridUnit, y: 10 * gridUnit},
+                {x: 4 * gridUnit, y: 10 * gridUnit}
+            ];
+
+            generateSnakeFood();
+
+            // Screen Toggle View
+            document.getElementById('terminal-content').classList.add('hidden');
+            document.getElementById('game-frame').classList.remove('hidden');
+            document.getElementById('mobile-gamepad').classList.remove('hidden');
+
+            // Keybindings
+            document.removeEventListener('keydown', handleGameKeys);
+            document.addEventListener('keydown', handleGameKeys);
+
+            // Audio Signal
+            playSound('square', 600, 0.15, 0.15);
+            setTimeout(() => playSound('square', 800, 0.15, 0.15), 150);
+
+            // Init Loop
+            if (gameLoopInterval) clearInterval(gameLoopInterval);
+            gameLoopInterval = setInterval(updateSnakePhysics, 110);
+        }
+
+        function generateSnakeFood() {
+            food = {
+                x: Math.floor(Math.random() * (canvas.width / gridUnit)) * gridUnit,
+                y: Math.floor(Math.random() * (canvas.height / gridUnit)) * gridUnit
+            };
+            
+            // Check if food spawned inside snake body
+            for (let part of snake) {
+                if (part.x === food.x && part.y === food.y) {
+                    generateSnakeFood();
+                    break;
+                }
+            }
+        }
+
+        function updateSnakePhysics() {
+            if (!isGameRunning) return;
+
+            // Compute new head coordinate
+            let headX = snake[0].x;
+            let headY = snake[0].y;
+
+            if (snakeDirection === 'RIGHT') headX += gridUnit;
+            else if (snakeDirection === 'LEFT') headX -= gridUnit;
+            else if (snakeDirection === 'UP') headY -= gridUnit;
+            else if (snakeDirection === 'DOWN') headY += gridUnit;
+
+            // Collision check: Wall boundaries or Self intersection
+            if (headX < 0 || headX >= canvas.width || headY < 0 || headY >= canvas.height || checkCollision(headX, headY, snake)) {
+                endSnakeGame(true);
+                return;
+            }
+
+            // Create new head
+            const newHead = {x: headX, y: headY};
+
+            // Food intake test
+            if (headX === food.x && headY === food.y) {
+                score += 10;
+                document.getElementById('snake-score').innerText = String(score).padStart(2, '0');
+                playSound('sine', 1000, 0.08, 0.12);
+                generateSnakeFood();
+            } else {
+                snake.pop(); // Remove tail segment
+            }
+
+            // Unshift new head
+            snake.unshift(newHead);
+
+            renderSnakeGameCanvas();
+        }
+
+        function checkCollision(x, y, array) {
+            // Check self crossing (ignore index 0)
+            for (let i = 1; i < array.length; i++) {
+                if (array[i].x === x && array[i].y === y) return true;
+            }
+            return false;
+        }
+
+        function renderSnakeGameCanvas() {
+            // Read visual color configurations from root CSS variables
+            const phosphorColor = getComputedStyle(document.documentElement).getPropertyValue('--phosphor-color').trim();
+
+            // Clear frame
+            ctx.fillStyle = '#050300';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw glowing food element
+            ctx.fillStyle = phosphorColor;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = phosphorColor;
+            ctx.fillRect(food.x + 2, food.y + 2, gridUnit - 4, gridUnit - 4);
+
+            // Draw Snake segments
+            for (let i = 0; i < snake.length; i++) {
+                ctx.fillStyle = i === 0 ? '#ffffff' : phosphorColor;
+                ctx.shadowBlur = i === 0 ? 12 : 6;
+                ctx.fillRect(snake[i].x + 1, snake[i].y + 1, gridUnit - 2, gridUnit - 2);
+            }
+            
+            // Reset canvas shadow configurations for performance
+            ctx.shadowBlur = 0;
+        }
+
+        function handleGameKeys(e) {
+            if (!isGameRunning) return;
+            
+            // Block normal browser arrow scrolling inside active game container
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+                e.preventDefault();
+            }
+
+            switch(e.key) {
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    if (snakeDirection !== 'RIGHT') snakeDirection = 'LEFT';
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    if (snakeDirection !== 'LEFT') snakeDirection = 'RIGHT';
+                    break;
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    if (snakeDirection !== 'DOWN') snakeDirection = 'UP';
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    if (snakeDirection !== 'UP') snakeDirection = 'DOWN';
+                    break;
+                case 'Escape':
+                    endSnakeGame(false);
+                    break;
+            }
+            playSound('triangle', 600, 0.02, 0.05);
+        }
+
+        function changeSnakeDirection(dir) {
+            if (!isGameRunning) return;
+            if (dir === 'LEFT' && snakeDirection !== 'RIGHT') snakeDirection = 'LEFT';
+            if (dir === 'RIGHT' && snakeDirection !== 'LEFT') snakeDirection = 'RIGHT';
+            if (dir === 'UP' && snakeDirection !== 'DOWN') snakeDirection = 'UP';
+            if (dir === 'DOWN' && snakeDirection !== 'UP') snakeDirection = 'DOWN';
+            playSound('triangle', 600, 0.02, 0.05);
+        }
+
+        function endSnakeGame(died) {
+            isGameRunning = false;
+            clearInterval(gameLoopInterval);
+            document.removeEventListener('keydown', handleGameKeys);
+
+            // View toggles
+            document.getElementById('game-frame').classList.add('hidden');
+            document.getElementById('mobile-gamepad').classList.add('hidden');
+            document.getElementById('terminal-content').classList.remove('hidden');
+            activeMode = 'terminal';
+
+            if (died) {
+                playSound('sawtooth', 120, 0.4, 0.2);
+                logOutput("<br>=== SYSTEM GAME OVER ===");
+                logOutput(`GUEST HIGH SCORE RECORDED: ${score} POINTS.`);
+                logOutput("System mainframe telemetry updated.<br>");
+            } else {
+                logOutput("<br>Game closed manually by guest user interface overrides.<br>");
+            }
+            
+            setTimeout(() => terminalInput.focus(), 100);
+        }
+    </script>
+</body>
+</html>
